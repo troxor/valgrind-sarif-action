@@ -1,7 +1,7 @@
 # import xml.etree.ElementTree as ET
 import argparse
 import xmltodict
-from sarif_om import SarifLog, Run, Tool, Result, Message, Location, PhysicalLocation, ArtifactLocation, Region, LogicalLocation
+from sarif_om import SarifLog, Run, Tool, ToolComponent, Result, Message, Location, PhysicalLocation, ArtifactLocation, Region, LogicalLocation
 from jschema_to_python.to_json import to_json
 import json
 
@@ -15,7 +15,7 @@ def create_sarif(results):
     sarif = SarifLog(version="2.1.0", schema_uri="https://json.schemastore.org/sarif-2.1.0.json", runs=[])
 
     vgo = results["valgrindoutput"]
-    tool = Tool(driver=vgo["protocoltool"])
+    tool = Tool(driver=ToolComponent(name=vgo["protocoltool"], version=vgo["protocolversion"], information_uri="https://valgrind.org"))
     results = []
     error = vgo["error"]
     # If there's only one type of memory error, this won't be a list
@@ -24,14 +24,14 @@ def create_sarif(results):
     # Each <error> corresponds to a Result
     for e in error:
         m = Message(text=e["kind"])
-        result = Result(message=m, locations=[])
+        result = Result(message=m, rule_id=f'{e["unique"]}', locations=[])
         for frame in e["stack"]["frame"]:
             pl = None
             r = None
             if "dir" in frame.keys() and "file" in frame.keys():
                 al = ArtifactLocation(uri=f'file://{frame["dir"]}/{frame["file"]}')
                 if "line" in frame.keys():
-                    r = Region(start_line=f'{frame["line"]}')
+                    r = Region(start_line=int(frame["line"]))
                 pl = PhysicalLocation(artifact_location=al, region=r)
             ll = LogicalLocation(fully_qualified_name=frame["fn"])
             l = Location(physical_location=pl, logical_locations=[ll])
