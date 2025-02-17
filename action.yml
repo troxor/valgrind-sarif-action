@@ -1,0 +1,21 @@
+name: "Valgrind XML to SARIF Converter"
+description: "Upload analysis to Github CodeQL"
+branding:
+  icon: "archive"
+  color: "blue"
+inputs:
+  xml_input_file:
+    description: "Valgrind XML file to process"
+    required: true
+    default: ""
+  sarif_output_file:
+    description: "SARIF-compliant JSON file output"
+    required: true
+    default: ""
+
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+    - ${{ inputs.xml_input_file }}
+    - ${{ inputs.sarif_output_file }}
