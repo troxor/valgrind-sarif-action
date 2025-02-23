@@ -17,26 +17,30 @@ def create_sarif(results):
     vgo = results["valgrindoutput"]
     tool = Tool(driver=ToolComponent(name=vgo["protocoltool"], version=vgo["protocolversion"], information_uri="https://valgrind.org"))
     results = []
-    error = vgo["error"]
-    # If there's only one type of memory error, this won't be a list
-    if not isinstance(error, list):
-        error = [error]
-    # Each <error> corresponds to a Result
-    for e in error:
-        m = Message(text=e["kind"])
-        result = Result(message=m, rule_id=f'{e["unique"]}', locations=[])
-        for frame in e["stack"]["frame"]:
-            pl = None
-            r = None
-            if "dir" in frame.keys() and "file" in frame.keys():
-                al = ArtifactLocation(uri=f'file://{frame["dir"]}/{frame["file"]}')
-                if "line" in frame.keys():
-                    r = Region(start_line=int(frame["line"]))
-                pl = PhysicalLocation(artifact_location=al, region=r)
-            ll = LogicalLocation(fully_qualified_name=frame["fn"])
-            l = Location(physical_location=pl, logical_locations=[ll])
-            result.locations.append(l)
-        results.append(result)
+    if "error" in vgo.keys():
+        error = vgo["error"]
+        # If there's only one type of memory error, this won't be a list
+        if not isinstance(error, list):
+            error = [error]
+        # Each <error> corresponds to a Result
+        for e in error:
+            m = Message(text=e["kind"])
+            result = Result(message=m, rule_id=f'{e["unique"]}', locations=[])
+            for frame in e["stack"]["frame"]:
+                pl = None
+                r = None
+                if "dir" in frame.keys() and "file" in frame.keys():
+                    al = ArtifactLocation(uri=f'file://{frame["dir"]}/{frame["file"]}')
+                    if "line" in frame.keys():
+                        r = Region(start_line=int(frame["line"]))
+                    pl = PhysicalLocation(artifact_location=al, region=r)
+                ll = LogicalLocation(fully_qualified_name=frame["fn"])
+                l = Location(physical_location=pl, logical_locations=[ll])
+                result.locations.append(l)
+            results.append(result)
+    else:
+        print("No errors in XML input")
+
     
     run = Run(tool=tool, results=results)
     sarif.runs.append(run)
