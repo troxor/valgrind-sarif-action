@@ -12,7 +12,7 @@ jobs:
 
       - name: "Install dependencies"
         run: |
-          sudo apt update && apt install -y valgrind
+          sudo apt update && sudo apt install -y valgrind
 
       - name: "Compile tests"
         run: |
