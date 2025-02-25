@@ -30,7 +30,7 @@ jobs:
           --show-leak-kinds=all --read-inline-info=yes --errors-for-leak-kinds=all \
           --expensive-definedness-checks=yes \
           --xml=yes --xml-file=valgrind-output.xml \
-          test_invalid_free
+          ./test_invalid_free
 
       - name: "Valgrind test_invalid_free convert"
         uses: ./
