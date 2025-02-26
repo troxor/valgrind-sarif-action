@@ -7,7 +7,7 @@ import json
 
 def parse_valgrind_xml(xml_file):
     xdict = xmltodict.parse(open(xml_file, "r").read())
-    print(json.dumps(xdict))
+    # print(json.dumps(xdict))
     return xdict
 
 def create_sarif(results):
@@ -17,24 +17,23 @@ def create_sarif(results):
     vgo = results["valgrindoutput"]
     tool = Tool(driver=ToolComponent(name=vgo["protocoltool"], version=vgo["protocolversion"], information_uri="https://valgrind.org"))
     results = []
+
     if "error" in vgo.keys():
-        error = vgo["error"]
         # If there's only one type of memory error, this won't be a list
-        if not isinstance(error, list):
-            error = [error]
+        errors = vgo["error"] if isinstance(vgo["error"], list) else [vgo["error"]]
         # Each <error> corresponds to a Result
-        for e in error:
+        for e in errors:
             m = Message(text=e["kind"])
             result = Result(message=m, rule_id=f'{e["unique"]}', locations=[])
-            for stack in e["stack"]:
-                for frame in stack:
+            stacks = e["stack"] if isinstance(e["stack"], list) else [e["stack"]]
+            for stack in stacks:
+                for frame in stack["frame"]:
                     pl = None
                     r = None
-                    if "dir" in frame.keys() and "file" in frame.keys():
-                        al = ArtifactLocation(uri=f'file://{frame["dir"]}/{frame["file"]}')
-                        if "line" in frame.keys():
-                            r = Region(start_line=int(frame["line"]))
-                        pl = PhysicalLocation(artifact_location=al, region=r)
+                    al = ArtifactLocation(uri=f'file://{frame["dir"]}/{frame["file"]}') if "dir" in frame.keys() else ArtifactLocation(uri=f'{frame["obj"]}', description="No debug symbols found")
+                    if "line" in frame.keys():
+                        r = Region(start_line=int(frame["line"]))
+                    pl = PhysicalLocation(artifact_location=al, region=r)
                     ll = LogicalLocation(fully_qualified_name=frame["fn"])
                     l = Location(physical_location=pl, logical_locations=[ll])
                     result.locations.append(l)
