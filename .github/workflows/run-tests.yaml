@@ -1,0 +1,42 @@
+name: SARIF Tester
+
+on:
+  - push
+
+jobs:
+  run_tests:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4.1.4
+
+      - name: "Install dependencies"
+        run: |
+          sudo apt update && sudo apt install -y valgrind
+
+      - name: "Compile tests"
+        run: |
+          gcc -g test.c -o test
+
+      - name: "Valgrind test_invalid_free run"
+        run: | 
+          valgrind \
+          --track-origins=yes --read-var-info=yes --trace-children=yes \
+          --show-leak-kinds=all --read-inline-info=yes --errors-for-leak-kinds=all \
+          --expensive-definedness-checks=yes \
+          --xml=yes --xml-file=valgrind-output.xml \
+          ./test
+
+      - name: "Convert XML to SARIF"
+        uses: ./
+        with:
+          xml_input_file: "valgrind-output.xml"
+          sarif_output_file: "valgrind-output.sarif"
+
+      - name: "Upload SARIF file"
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: valgrind-output.sarif
+          category: valgrind
