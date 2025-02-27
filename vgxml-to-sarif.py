@@ -28,11 +28,8 @@ def create_sarif(results):
             stacks = e["stack"] if isinstance(e["stack"], list) else [e["stack"]]
             for stack in stacks:
                 for frame in stack["frame"]:
-                    pl = None
-                    r = None
-                    al = ArtifactLocation(uri=f'file://{frame["dir"]}/{frame["file"]}') if "dir" in frame.keys() else ArtifactLocation(uri=f'{frame["obj"]}', description="No debug symbols found")
-                    if "line" in frame.keys():
-                        r = Region(start_line=int(frame["line"]))
+                    al = ArtifactLocation(uri=f'file://{frame["dir"]}/{frame["file"]}') if "dir" in frame.keys() else ArtifactLocation(uri=f'file://{frame["obj"]}', description=Message(text="No debug symbols found"))
+                    r = Region(start_line=int(frame["line"])) if "line" in frame.keys() else None
                     pl = PhysicalLocation(artifact_location=al, region=r)
                     ll = LogicalLocation(fully_qualified_name=frame["fn"])
                     l = Location(physical_location=pl, logical_locations=[ll])
@@ -40,7 +37,6 @@ def create_sarif(results):
             results.append(result)
     else:
         print("No errors in XML input")
-
     
     run = Run(tool=tool, results=results)
     sarif.runs.append(run)
