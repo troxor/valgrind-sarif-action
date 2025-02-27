@@ -6,6 +6,7 @@ from jschema_to_python.to_json import to_json
 import json
 
 def parse_valgrind_xml(xml_file):
+    # Drawback: if there's one field, e.g. <stack>, <frame>, etc. it does not become a singleton list
     xdict = xmltodict.parse(open(xml_file, "r").read())
     # print(json.dumps(xdict))
     return xdict
@@ -18,16 +19,16 @@ def create_sarif(results):
     tool = Tool(driver=ToolComponent(name=vgo["protocoltool"], version=vgo["protocolversion"], information_uri="https://valgrind.org"))
     results = []
 
+    # Each <error> corresponds to a Result
     if "error" in vgo.keys():
-        # If there's only one type of memory error, this won't be a list
         errors = vgo["error"] if isinstance(vgo["error"], list) else [vgo["error"]]
-        # Each <error> corresponds to a Result
         for e in errors:
             m = Message(text=e["kind"])
             result = Result(message=m, rule_id=f'{e["unique"]}', locations=[])
             stacks = e["stack"] if isinstance(e["stack"], list) else [e["stack"]]
             for stack in stacks:
-                for frame in stack["frame"]:
+                frames = stack["frame"] if isinstance(stack["frame"], list) else [stack["frame"]]
+                for frame in frames:
                     al = ArtifactLocation(uri=f'file://{frame["dir"]}/{frame["file"]}') if "dir" in frame.keys() else ArtifactLocation(uri=f'file://{frame["obj"]}', description=Message(text="No debug symbols found"))
                     r = Region(start_line=int(frame["line"])) if "line" in frame.keys() else None
                     pl = PhysicalLocation(artifact_location=al, region=r)
