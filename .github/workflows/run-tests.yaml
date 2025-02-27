@@ -67,3 +67,8 @@ jobs:
       #   with:
       #     binary_path: "./test_unclosed_file_descriptor"
       #     treat_error_as_warning: true
+      - name: "Upload SARIF file"
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: valgrind-output.sarif
+          category: valgrind
