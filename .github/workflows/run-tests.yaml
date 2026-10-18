@@ -1,7 +1,10 @@
 name: SARIF Tester
 
 on:
-  - push
+  push:
+    branches:
+      - master
+  pull_request:
 
 jobs:
   run_tests:
@@ -21,7 +24,7 @@ jobs:
           gcc -g test.c -o test
 
       - name: "Valgrind test_invalid_free run"
-        run: | 
+        run: |
           valgrind \
           --track-origins=yes --read-var-info=yes --trace-children=yes \
           --show-leak-kinds=all --read-inline-info=yes --errors-for-leak-kinds=all \
