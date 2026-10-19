@@ -38,7 +38,7 @@ def create_sarif(results):
             results.append(result)
     else:
         print("No errors in XML input")
-    
+
     run = Run(tool=tool, results=results)
     sarif.runs.append(run)
     return sarif
@@ -62,4 +62,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
